@@ -7,15 +7,17 @@ namespace Touta\Framework;
 use Touta\Aria\Runtime\Failure;
 use Touta\Aria\Runtime\Http\ResponseInterface;
 use Touta\Aria\Runtime\Result;
-use Touta\Aria\Runtime\StructuredFailure;
 use Touta\Aria\Runtime\Success;
 use Touta\Cosan\RouteCollection;
 use Touta\Cosan\Router;
+use Touta\Cosan\RoutingError;
 use Touta\Eolas\ConfigLoaderInterface;
 use Touta\Eolas\ConfigRepository;
 use Touta\Nasc\Container;
+use Touta\Nasc\ServiceId;
 use Touta\Scela\EventBus;
 use Touta\Scela\Message;
+use Touta\Scela\TopicName;
 
 /**
  * Thin integration kernel for the Touta PHP framework.
@@ -49,9 +51,9 @@ final class App
         $bus = new EventBus();
 
         $container = Container::create()
-            ->singleton(ConfigRepository::class, static fn(): ConfigRepository => $config)
-            ->singleton(RouteCollection::class, static fn(): RouteCollection => $routes)
-            ->singleton(EventBus::class, static fn(): EventBus => $bus);
+            ->singleton(new ServiceId(ConfigRepository::class), static fn(): ConfigRepository => $config)
+            ->singleton(new ServiceId(RouteCollection::class), static fn(): RouteCollection => $routes)
+            ->singleton(new ServiceId(EventBus::class), static fn(): EventBus => $bus);
 
         return new self($config, $routes, $bus, $container);
     }
@@ -80,13 +82,13 @@ final class App
      * Route a request and run its handler.
      *
      * On success the Result wraps a ResponseInterface.
-     * On failure the Result wraps a StructuredFailure.
+     * On failure the Result wraps a FrameworkError.
      *
-     * @return Result<ResponseInterface, StructuredFailure>
+     * @return Result<ResponseInterface, FrameworkError>
      */
     public function handle(string $method, string $uri): Result
     {
-        $this->eventBus->publish(new Message('app.request', [
+        $this->eventBus->publish(new Message(new TopicName('app.request'), [
             'method' => $method,
             'uri' => $uri,
         ]));
@@ -95,8 +97,14 @@ final class App
         $matchResult = $router->match($method, $uri);
 
         if ($matchResult->isFailure()) {
-            /** @var Failure<StructuredFailure> $matchResult */
-            return $matchResult;
+            /** @var Failure<RoutingError> $matchResult */
+            $routingError = $matchResult->error();
+
+            return Failure::from(new FrameworkError(
+                FrameworkError::ROUTE_FAILED,
+                $routingError->message,
+                ['routing_code' => $routingError->code, ...$routingError->context],
+            ));
         }
 
         /** @var \Touta\Cosan\RouteMatch $match */
@@ -107,28 +115,38 @@ final class App
             /** @var mixed $response */
             $response = $handler($match);
         } catch (\Throwable $e) {
-            return Failure::from(new StructuredFailure(
-                'handler.error',
+            return Failure::from(new FrameworkError(
+                FrameworkError::HANDLER_FAILED,
                 $e->getMessage(),
                 ['exception' => $e::class],
             ));
         }
 
         if ($response instanceof Result) {
-            /** @var Result<ResponseInterface, StructuredFailure> $response */
+            if ($response->isSuccess()) {
+                $inner = $response->getOrElse(null);
+
+                if ($inner instanceof ResponseInterface) {
+                    $this->eventBus->publish(new Message(new TopicName('app.response'), [
+                        'status' => $inner->statusCode(),
+                    ]));
+                }
+            }
+
+            /** @var Result<ResponseInterface, FrameworkError> $response */
             return $response;
         }
 
         if ($response instanceof ResponseInterface) {
-            $this->eventBus->publish(new Message('app.response', [
+            $this->eventBus->publish(new Message(new TopicName('app.response'), [
                 'status' => $response->statusCode(),
             ]));
 
             return Success::of($response); // @phpstan-ignore return.type (Result<T,E> not covariant)
         }
 
-        return Failure::from(new StructuredFailure(
-            'handler.invalid_return',
+        return Failure::from(new FrameworkError(
+            FrameworkError::HANDLER_FAILED,
             'Handler must return ResponseInterface or Result',
         ));
     }

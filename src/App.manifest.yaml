@@ -1,0 +1,37 @@
+aru:
+  address: framework.app.orchestrate.App
+  file: src/App.php
+  layer: L4_SYSTEM
+  description: >
+    Thin integration kernel that wires config, container, router,
+    response, and event bus without absorbing their responsibilities.
+  type: orchestrator
+  composition_patterns:
+    - pattern: PIPE
+      description: "request → router → handler → response"
+      flow:
+        - receive HTTP method and URI
+        - route via Router::match()
+        - invoke matched handler
+        - return ResponseInterface wrapped in Result
+    - pattern: OBSERVE
+      description: "lifecycle event emission via EventBus"
+      events:
+        - topic: app.request
+          trigger: before routing
+        - topic: app.response
+          trigger: after successful handler response
+    - pattern: COORDINATE
+      description: "boot sequence wiring"
+      steps:
+        - load configuration via ConfigLoaderInterface
+        - create RouteCollection, EventBus
+        - bind framework services into Container as singletons
+        - return assembled App instance
+  dependencies:
+    - cosan-router (L2)
+    - nasc-di (L2)
+    - eolas-config (L1)
+    - scela-bus (L2)
+    - freagair-response (L3)
+    - aria-runtime-php (L0)

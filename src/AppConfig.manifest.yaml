@@ -1,0 +1,9 @@
+aru:
+  address: framework.AppConfig
+  file: src/AppConfig.php
+  layer: L0_PRIMITIVE
+  description: >
+    Branded wrapper for application configuration arrays.
+    Prevents raw array<string, mixed> from leaking through public APIs.
+  type: branded_type
+  wraps: "array<string, mixed>"

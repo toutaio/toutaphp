@@ -1,0 +1,13 @@
+aru:
+  address: framework.FrameworkError
+  file: src/FrameworkError.php
+  layer: L0_PRIMITIVE
+  description: >
+    Domain-typed error for the framework integration layer.
+    Replaces StructuredFailure with framework-specific error codes.
+  type: domain_error
+  codes:
+    - FRAMEWORK.BOOT_FAILED
+    - FRAMEWORK.ROUTE_FAILED
+    - FRAMEWORK.HANDLER_FAILED
+    - FRAMEWORK.CONFIG_FAILED
