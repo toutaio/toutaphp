@@ -1,0 +1,52 @@
+{
+    "name": "touta/toutaphp",
+    "description": "Thin integration framework for the Touta PHP ecosystem",
+    "type": "library",
+    "license": "MIT",
+    "repositories": [
+        {"type": "vcs", "url": "https://github.com/toutaio/aria-runtime-php"},
+        {"type": "vcs", "url": "https://github.com/toutaio/eolas-config"},
+        {"type": "vcs", "url": "https://github.com/toutaio/nasc-di"},
+        {"type": "vcs", "url": "https://github.com/toutaio/freagair-response"},
+        {"type": "vcs", "url": "https://github.com/toutaio/cosan-router"},
+        {"type": "vcs", "url": "https://github.com/toutaio/scela-bus"}
+    ],
+    "require": {
+        "php": "^8.3",
+        "touta/aria-runtime-php": "dev-main",
+        "touta/cosan-router": "dev-main",
+        "touta/eolas-config": "dev-main",
+        "touta/freagair-response": "dev-main",
+        "touta/nasc-di": "dev-main",
+        "touta/scela-bus": "dev-main"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "pestphp/pest": "^3.0",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Touta\\Framework\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Touta\\Framework\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "./vendor/bin/pest",
+        "analyse": "./vendor/bin/phpstan analyse",
+        "lint": "./vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "lint:fix": "./vendor/bin/php-cs-fixer fix",
+        "qa": ["@lint", "@analyse", "@test"]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {"pestphp/pest-plugin": true}
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
