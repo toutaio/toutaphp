@@ -13,12 +13,12 @@
     ],
     "require": {
         "php": "^8.3",
-        "touta/aria-runtime-php": "dev-main",
-        "touta/cosan-router": "dev-main",
-        "touta/eolas-config": "dev-main",
-        "touta/freagair-response": "dev-main",
-        "touta/nasc-di": "dev-main",
-        "touta/scela-bus": "dev-main"
+        "touta/aria-runtime-php": "^0.1",
+        "touta/cosan-router": "^0.1",
+        "touta/eolas-config": "^0.1",
+        "touta/freagair-response": "^0.1",
+        "touta/nasc-di": "^0.1",
+        "touta/scela-bus": "^0.1"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
